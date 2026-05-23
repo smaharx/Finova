@@ -3,6 +3,8 @@ import joblib
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy import func # Add this
+
 
 # Import our custom database configurations and models
 from api.database import get_db
@@ -137,3 +139,49 @@ def create_transaction(item: TransactionCreateInput, db: Session = Depends(get_d
     except Exception as e:
         db.rollback() # Rollback the database state if the network connection drops mid-flight
         raise HTTPException(status_code=500, detail=f"Cloud write failure: {str(e)}")    
+
+# ==========================================
+# ENDPOINT 5: FINANCIAL ANALYTICS SUMMARY
+# ==========================================
+@app.get("/analytics/summary")
+def get_analytics_summary(db: Session = Depends(get_db)):
+    """
+    Performs server-side aggregation to provide financial insights.
+    Calculates total spending and breaks it down by category.
+    """
+    try:
+        # 1. Calculate Total Spending across all transactions
+        total_spent = db.query(func.sum(TransactionModel.amount)).scalar() or 0.0
+        
+        # 2. Calculate count of transactions
+        total_count = db.query(func.count(TransactionModel.id)).scalar() or 0
+        
+        # 3. Categorical Breakdown (The heavy lifting)
+        # SQL equivalent: SELECT category, SUM(amount) FROM transactions GROUP BY category
+        category_data = db.query(
+            TransactionModel.category, 
+            func.sum(TransactionModel.amount).label("total_amount"),
+            func.count(TransactionModel.id).label("count")
+        ).group_by(TransactionModel.category).all()
+        
+        # Format the categorical data into a clean list of dictionaries
+        breakdown = [
+            {
+                "category": row.category,
+                "total_amount": row.total_amount,
+                "transaction_count": row.count,
+                "percentage": round((row.total_amount / total_spent) * 100, 2) if total_spent > 0 else 0
+            }
+            for row in category_data
+        ]
+        
+        return {
+            "overall": {
+                "total_spent": round(total_spent, 2),
+                "transaction_count": total_count,
+            },
+            "categorical_breakdown": breakdown
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analytics Engine Error: {str(e)}")    
