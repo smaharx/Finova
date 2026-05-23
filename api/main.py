@@ -3,7 +3,9 @@ import joblib
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from sqlalchemy import func # Add this
+from sqlalchemy import func 
+import statistics
+
 
 
 # Import our custom database configurations and models
@@ -98,6 +100,31 @@ class TransactionCreateInput(BaseModel):
     description: str
     amount: float
 
+def check_for_anomaly(db: Session, category: str, new_amount: float):
+    """
+    Compares the new amount against historical data for the same category.
+    Returns 1 if it's an anomaly, 0 otherwise.
+    """
+    # 1. Fetch the last 20 transaction amounts for this category
+    history = db.query(TransactionModel.amount).filter(
+        TransactionModel.category == category
+    ).order_by(TransactionModel.id.desc()).limit(20).all()
+
+    # We need at least 5 transactions to make a meaningful statistical judgment
+    if len(history) < 5:
+        return 0
+
+    # Convert list of tuples to list of floats
+    amounts = [h[0] for h in history]
+    
+    mean = statistics.mean(amounts)
+    std_dev = statistics.stdev(amounts)
+
+    if std_dev == 0: return 0 # Avoid division by zero if all previous spends were identical
+
+    z_score = abs(new_amount - mean) / std_dev
+    
+    return 1 if z_score > 3 else 0
 
 @app.post("/transactions")
 def create_transaction(item: TransactionCreateInput, db: Session = Depends(get_db)):
@@ -105,12 +132,14 @@ def create_transaction(item: TransactionCreateInput, db: Session = Depends(get_d
     Accepts a new transaction, uses the internal AI model to predict its category,
     and commits the enriched record directly into the cloud PostgreSQL database.
     """
+    
     # 1. Fallback if the AI model failed to load
     if MODEL_LOADED:
         predicted_cat = model.predict([item.description])[0]
     else:
         predicted_cat = "Uncategorized (Model Offline)"
         
+    anomaly_status = check_for_anomaly(db, predicted_cat, item.amount)    
     try:
         # 2. Map the input and AI prediction into our SQLAlchemy relational model
         new_record = TransactionModel(
@@ -118,7 +147,7 @@ def create_transaction(item: TransactionCreateInput, db: Session = Depends(get_d
             description=item.description,
             amount=item.amount,
             category=predicted_cat,
-            is_anomaly=0 # Default to normal; anomaly engine comes in Streak 3
+            is_anomaly=anomaly_status # Default to normal; anomaly engine comes in Streak 3
         )
         
         # 3. Use the ORM session to add and commit the record to the cloud network
