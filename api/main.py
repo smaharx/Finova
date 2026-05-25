@@ -23,16 +23,17 @@ class TransactionCreateInput(BaseModel):
     description: str
     amount: float
 
-class TransactionCorrectionInput(BaseModel):
-    corrected_category: str
-    notes: str | None = None    
-
 
 class TransactionUpdateInput(BaseModel):
     date: Optional[str] = None
     description: Optional[str] = None
     amount: Optional[float] = None
     category: Optional[str] = None
+
+
+class TransactionCorrectionInput(BaseModel):
+    corrected_category: str
+    notes: Optional[str] = None
 
 
 MODEL_PATH = os.path.join("ml", "saved_brain.pkl")
@@ -72,6 +73,34 @@ def check_for_anomaly(db: Session, category: str, new_amount: float, exclude_id:
     return 1 if z_score > 3 else 0
 
 
+def build_transaction_query(
+    db: Session,
+    search: Optional[str] = None,
+    category: Optional[str] = None,
+    only_anomalies: bool = False,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+):
+    query = db.query(TransactionModel)
+
+    if search:
+        query = query.filter(TransactionModel.description.ilike(f"%{search.strip()}%"))
+
+    if category and category != "All":
+        query = query.filter(TransactionModel.category == category)
+
+    if only_anomalies:
+        query = query.filter(TransactionModel.is_anomaly == 1)
+
+    if start_date:
+        query = query.filter(TransactionModel.date >= start_date)
+
+    if end_date:
+        query = query.filter(TransactionModel.date <= end_date)
+
+    return query
+
+
 @app.get("/")
 def health_check():
     return {
@@ -95,14 +124,26 @@ def predict_category(item: TransactionCreate):
 
 
 @app.get("/transactions")
-def get_transactions(limit: int = 50, db: Session = Depends(get_db)):
+def get_transactions(
+    limit: int = 50,
+    search: Optional[str] = None,
+    category: Optional[str] = None,
+    only_anomalies: bool = False,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
     try:
-        transactions = (
-            db.query(TransactionModel)
-            .order_by(TransactionModel.date.desc())
-            .limit(limit)
-            .all()
+        query = build_transaction_query(
+            db=db,
+            search=search,
+            category=category,
+            only_anomalies=only_anomalies,
+            start_date=start_date,
+            end_date=end_date,
         )
+
+        transactions = query.order_by(TransactionModel.date.desc()).limit(limit).all()
 
         serialized_transactions = [
             {
@@ -238,7 +279,7 @@ def delete_transaction(transaction_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
-    
+
 
 @app.get("/corrections")
 def get_corrections(limit: int = 50, db: Session = Depends(get_db)):
@@ -329,16 +370,32 @@ def teach_ai(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Teach-AI save failed: {str(e)}")    
+        raise HTTPException(status_code=500, detail=f"Teach-AI save failed: {str(e)}")
 
 
 @app.get("/analytics/summary")
-def get_analytics_summary(db: Session = Depends(get_db)):
+def get_analytics_summary(
+    search: Optional[str] = None,
+    category: Optional[str] = None,
+    only_anomalies: bool = False,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
     try:
-        total_spent = db.query(func.sum(TransactionModel.amount)).scalar() or 0.0
-        total_count = db.query(func.count(TransactionModel.id)).scalar() or 0
+        base_query = build_transaction_query(
+            db=db,
+            search=search,
+            category=category,
+            only_anomalies=only_anomalies,
+            start_date=start_date,
+            end_date=end_date,
+        )
 
-        category_data = db.query(
+        total_spent = base_query.with_entities(func.sum(TransactionModel.amount)).scalar() or 0.0
+        total_count = base_query.with_entities(func.count(TransactionModel.id)).scalar() or 0
+
+        category_data = base_query.with_entities(
             TransactionModel.category,
             func.sum(TransactionModel.amount).label("total_amount"),
             func.count(TransactionModel.id).label("count"),
