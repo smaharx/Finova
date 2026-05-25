@@ -1,32 +1,38 @@
-import streamlit as st
-import requests
-import pandas as pd
+import os
 from datetime import date, datetime
 
-st.set_page_config(page_title="SaaS Finance Tracker V2", layout="wide")
+import pandas as pd
+import requests
+import streamlit as st
+from dotenv import load_dotenv
 
-BACKEND_URL = "http://127.0.0.1:8000"
+load_dotenv()
+
+BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+
+st.set_page_config(page_title="SaaS Finance Tracker V2", layout="wide")
 
 st.title("🛡️ Smart Finance Dashboard (V2.0)")
 st.caption("Frontend client for the FastAPI backend")
 
 
-def api_get(path: str, timeout: int = 5):
+def api_get(path: str, timeout: int = 15):
     return requests.get(f"{BACKEND_URL}{path}", timeout=timeout)
 
 
-def api_post(path: str, payload: dict, timeout: int = 5):
+def api_post(path: str, payload: dict, timeout: int = 15):
     return requests.post(f"{BACKEND_URL}{path}", json=payload, timeout=timeout)
 
 
-def api_put(path: str, payload: dict, timeout: int = 5):
+def api_put(path: str, payload: dict, timeout: int = 15):
     return requests.put(f"{BACKEND_URL}{path}", json=payload, timeout=timeout)
 
 
-def api_delete(path: str, timeout: int = 5):
+def api_delete(path: str, timeout: int = 15):
     return requests.delete(f"{BACKEND_URL}{path}", timeout=timeout)
 
 
+@st.cache_data(ttl=5)
 def fetch_health():
     try:
         response = api_get("/")
@@ -36,10 +42,11 @@ def fetch_health():
     except requests.RequestException as e:
         return None, str(e)
 
+
 @st.cache_data(ttl=5)
 def fetch_transactions(limit: int = 100):
     try:
-        response = api_get(f"/transactions?limit={limit}", timeout=15)
+        response = api_get(f"/transactions?limit={limit}")
         if response.ok:
             return response.json().get("transactions", []), None
         return [], response.text
@@ -50,17 +57,18 @@ def fetch_transactions(limit: int = 100):
 @st.cache_data(ttl=5)
 def fetch_summary():
     try:
-        response = api_get("/analytics/summary", timeout=15)
+        response = api_get("/analytics/summary")
         if response.ok:
             return response.json(), None
         return None, response.text
     except requests.RequestException as e:
         return None, str(e)
 
+
 @st.cache_data(ttl=5)
 def fetch_corrections(limit: int = 25):
     try:
-        response = api_get(f"/corrections?limit={limit}", timeout=15)
+        response = api_get(f"/corrections?limit={limit}")
         if response.ok:
             return response.json().get("corrections", []), None
         return [], response.text
@@ -142,8 +150,16 @@ else:
     st.stop()
 
 summary, summary_error = fetch_summary()
-transactions, tx_error = fetch_transactions(limit=100)
+transactions, tx_error = fetch_transactions(limit=200)
 corrections, corr_error = fetch_corrections(limit=25)
+
+df = pd.DataFrame(transactions) if transactions else pd.DataFrame()
+
+search_text = ""
+selected_category = "All"
+only_anomalies = False
+start_date = None
+end_date = None
 
 with st.sidebar:
     st.header("➕ Add Transaction")
@@ -166,7 +182,49 @@ with st.sidebar:
                 st.success(f"Saved as: {saved.get('category', 'Unknown')}")
                 if saved.get("is_anomaly"):
                     st.warning("⚠️ This transaction was flagged as unusual.")
+                st.cache_data.clear()
                 st.rerun()
+
+    st.divider()
+    st.header("🔎 Filter Transactions")
+
+    search_text = st.text_input("Search description", placeholder="Search by merchant or note")
+    only_anomalies = st.checkbox("Show only anomalies", value=False)
+
+    if not df.empty and "category" in df.columns:
+        category_list = sorted([c for c in df["category"].dropna().astype(str).unique().tolist() if c.strip()])
+        category_options = ["All"] + category_list
+        selected_category = st.selectbox("Category", category_options, index=0)
+    else:
+        st.selectbox("Category", ["All"], index=0)
+
+    if not df.empty and "date" in df.columns:
+        temp_dates = pd.to_datetime(df["date"], errors="coerce").dropna().dt.date
+        if not temp_dates.empty:
+            min_date = temp_dates.min()
+            max_date = temp_dates.max()
+            date_range = st.date_input("Date range", value=(min_date, max_date), min_value=min_date, max_value=max_date)
+            if isinstance(date_range, tuple) and len(date_range) == 2:
+                start_date, end_date = date_range
+            else:
+                start_date = end_date = date_range
+
+
+if not df.empty:
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.date
+
+    if search_text.strip():
+        df = df[df["description"].astype(str).str.contains(search_text.strip(), case=False, na=False)]
+
+    if selected_category != "All":
+        df = df[df["category"].astype(str) == selected_category]
+
+    if only_anomalies and "is_anomaly" in df.columns:
+        df = df[df["is_anomaly"] == 1]
+
+    if start_date and end_date and "date" in df.columns:
+        df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
 
 st.subheader("Live Dashboard")
 
@@ -186,14 +244,17 @@ else:
     col3.metric("Top Category", "—")
     st.warning(f"Could not load summary: {summary_error}")
 
+if not df.empty:
+    st.write(f"Filtered transactions: **{len(df)}**")
+    st.write(f"Filtered total: **${df['amount'].sum():,.2f}**")
+
 tab1, tab2, tab3, tab4 = st.tabs(["Transactions", "Category Breakdown", "Manage Transactions", "Teach AI"])
 
 with tab1:
     st.subheader("Recent Transactions")
     if tx_error:
         st.error(f"Could not load transactions: {tx_error}")
-    elif transactions:
-        df = pd.DataFrame(transactions)
+    elif not df.empty:
         display_cols = ["id", "date", "description", "category", "amount", "is_anomaly"]
         existing_cols = [c for c in display_cols if c in df.columns]
         st.dataframe(df[existing_cols], use_container_width=True, hide_index=True)
@@ -211,11 +272,9 @@ with tab2:
 with tab3:
     st.subheader("Edit or Delete a Transaction")
 
-    if not transactions:
+    if df.empty:
         st.info("No transactions available to edit or delete.")
     else:
-        df = pd.DataFrame(transactions)
-
         options = {
             f"ID {row['id']} | {row['date']} | {row['description']} | ${row['amount']:.2f} | {row['category']}": row
             for _, row in df.iterrows()
@@ -261,6 +320,7 @@ with tab3:
                     st.error(f"Update failed: {error}")
                 else:
                     st.success("Transaction updated successfully.")
+                    st.cache_data.clear()
                     st.rerun()
 
         st.write("### Delete Transaction")
@@ -272,16 +332,15 @@ with tab3:
                     st.error(f"Delete failed: {error}")
                 else:
                     st.success("Transaction deleted successfully.")
+                    st.cache_data.clear()
                     st.rerun()
 
 with tab4:
     st.subheader("Teach the AI")
 
-    if not transactions:
+    if df.empty:
         st.info("No transactions available to teach yet.")
     else:
-        df = pd.DataFrame(transactions)
-
         options = {
             f"ID {row['id']} | {row['date']} | {row['description']} | ${row['amount']:.2f} | {row['category']}": row
             for _, row in df.iterrows()
@@ -309,6 +368,7 @@ with tab4:
                     st.error(f"Could not save correction: {error}")
                 else:
                     st.success("Correction saved. The model now has a better clue what it is doing.")
+                    st.cache_data.clear()
                     st.rerun()
 
     st.write("### Recent Corrections")
