@@ -1,4 +1,4 @@
-import os
+﻿import os
 from typing import Generator
 
 import pytest
@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-# Force tests to use an isolated SQLite database.
 os.environ["DATABASE_URL"] = "sqlite:///./test_finance_tracker.db"
 
 from api.database import Base, get_db  # noqa: E402
