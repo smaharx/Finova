@@ -1,14 +1,11 @@
-import os
 from datetime import date, datetime
+from typing import Optional
 
 import pandas as pd
 import requests
 import streamlit as st
-from dotenv import load_dotenv
 
-
-load_dotenv()
-BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+from config.settings import BACKEND_URL
 
 st.set_page_config(page_title="SaaS Finance Tracker V2", layout="wide")
 
@@ -48,8 +45,8 @@ def fetch_transactions(
     search: str = "",
     category: str = "All",
     only_anomalies: bool = False,
-    start_date: str | None = None,
-    end_date: str | None = None ):
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None):
     params = {
         "limit": limit,
         "search": search or None,
@@ -72,8 +69,8 @@ def fetch_summary(
     search: str = "",
     category: str = "All",
     only_anomalies: bool = False,
-    start_date: str | None = None,
-    end_date: str | None = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
 ):
     params = {
         "search": search or None,
@@ -185,9 +182,7 @@ if "only_anomalies" not in st.session_state:
 if "date_range" not in st.session_state:
     st.session_state.date_range = None
 
-summary_placeholder = st.empty()
-transactions_placeholder = st.empty()
-corrections_placeholder = st.empty()
+
 
 with st.sidebar:
     st.header("➕ Add Transaction")
