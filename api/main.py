@@ -51,8 +51,12 @@ def predict_transaction_category(description: str) -> str:
     return "Uncategorized (Model Offline)"
 
 
-def check_for_anomaly(db: Session, category: str, new_amount: float, exclude_id: Optional[int] = None):
-    history_query = db.query(TransactionModel.amount).filter(TransactionModel.category == category)
+def check_for_anomaly(
+    db: Session, category: str, new_amount: float, exclude_id: Optional[int] = None
+):
+    history_query = db.query(TransactionModel.amount).filter(
+        TransactionModel.category == category
+    )
 
     if exclude_id is not None:
         history_query = history_query.filter(TransactionModel.id != exclude_id)
@@ -114,7 +118,9 @@ def health_check():
 @app.post("/predict")
 def predict_category(item: TransactionCreate):
     if not MODEL_LOADED:
-        raise HTTPException(status_code=503, detail="AI Model is not loaded. Train the model first.")
+        raise HTTPException(
+            status_code=503, detail="AI Model is not loaded. Train the model first."
+        )
 
     prediction = model.predict([item.description])[0]
     return {
@@ -157,10 +163,15 @@ def get_transactions(
             for t in transactions
         ]
 
-        return {"count": len(serialized_transactions), "transactions": serialized_transactions}
+        return {
+            "count": len(serialized_transactions),
+            "transactions": serialized_transactions,
+        }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database abstraction layer error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Database abstraction layer error: {str(e)}"
+        )
 
 
 @app.post("/transactions")
@@ -204,7 +215,9 @@ def update_transaction(
     item: TransactionUpdateInput,
     db: Session = Depends(get_db),
 ):
-    record = db.query(TransactionModel).filter(TransactionModel.id == transaction_id).first()
+    record = (
+        db.query(TransactionModel).filter(TransactionModel.id == transaction_id).first()
+    )
 
     if not record:
         raise HTTPException(status_code=404, detail="Transaction not found")
@@ -216,12 +229,16 @@ def update_transaction(
         if item.description is not None:
             clean_description = item.description.strip()
             if not clean_description:
-                raise HTTPException(status_code=400, detail="Description cannot be empty.")
+                raise HTTPException(
+                    status_code=400, detail="Description cannot be empty."
+                )
             record.description = clean_description
 
         if item.amount is not None:
             if item.amount <= 0:
-                raise HTTPException(status_code=400, detail="Amount must be greater than zero.")
+                raise HTTPException(
+                    status_code=400, detail="Amount must be greater than zero."
+                )
             record.amount = item.amount
 
         if item.category is not None:
@@ -264,7 +281,9 @@ def update_transaction(
 
 @app.delete("/transactions/{transaction_id}")
 def delete_transaction(transaction_id: int, db: Session = Depends(get_db)):
-    record = db.query(TransactionModel).filter(TransactionModel.id == transaction_id).first()
+    record = (
+        db.query(TransactionModel).filter(TransactionModel.id == transaction_id).first()
+    )
 
     if not record:
         raise HTTPException(status_code=404, detail="Transaction not found")
@@ -307,7 +326,9 @@ def get_corrections(limit: int = 50, db: Session = Depends(get_db)):
         return {"count": len(serialized), "corrections": serialized}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Correction history error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Correction history error: {str(e)}"
+        )
 
 
 @app.post("/transactions/{transaction_id}/correction")
@@ -316,14 +337,18 @@ def teach_ai(
     item: TransactionCorrectionInput,
     db: Session = Depends(get_db),
 ):
-    record = db.query(TransactionModel).filter(TransactionModel.id == transaction_id).first()
+    record = (
+        db.query(TransactionModel).filter(TransactionModel.id == transaction_id).first()
+    )
 
     if not record:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
     corrected_category = item.corrected_category.strip()
     if not corrected_category:
-        raise HTTPException(status_code=400, detail="Corrected category cannot be empty.")
+        raise HTTPException(
+            status_code=400, detail="Corrected category cannot be empty."
+        )
 
     try:
         correction = TransactionCorrectionModel(
@@ -364,7 +389,9 @@ def teach_ai(
                 "predicted_category": correction.predicted_category,
                 "corrected_category": correction.corrected_category,
                 "notes": correction.notes,
-                "created_at": correction.created_at.isoformat() if correction.created_at else None,
+                "created_at": (
+                    correction.created_at.isoformat() if correction.created_at else None
+                ),
             },
         }
 
@@ -392,21 +419,33 @@ def get_analytics_summary(
             end_date=end_date,
         )
 
-        total_spent = base_query.with_entities(func.sum(TransactionModel.amount)).scalar() or 0.0
-        total_count = base_query.with_entities(func.count(TransactionModel.id)).scalar() or 0
+        total_spent = (
+            base_query.with_entities(func.sum(TransactionModel.amount)).scalar() or 0.0
+        )
+        total_count = (
+            base_query.with_entities(func.count(TransactionModel.id)).scalar() or 0
+        )
 
-        category_data = base_query.with_entities(
-            TransactionModel.category,
-            func.sum(TransactionModel.amount).label("total_amount"),
-            func.count(TransactionModel.id).label("count"),
-        ).group_by(TransactionModel.category).all()
+        category_data = (
+            base_query.with_entities(
+                TransactionModel.category,
+                func.sum(TransactionModel.amount).label("total_amount"),
+                func.count(TransactionModel.id).label("count"),
+            )
+            .group_by(TransactionModel.category)
+            .all()
+        )
 
         breakdown = [
             {
                 "category": row.category,
                 "total_amount": row.total_amount,
                 "transaction_count": row.count,
-                "percentage": round((row.total_amount / total_spent) * 100, 2) if total_spent > 0 else 0,
+                "percentage": (
+                    round((row.total_amount / total_spent) * 100, 2)
+                    if total_spent > 0
+                    else 0
+                ),
             }
             for row in category_data
         ]
