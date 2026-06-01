@@ -12,6 +12,7 @@ st.set_page_config(page_title="SaaS Finance Tracker V2", layout="wide")
 st.title("🛡️ Smart Finance Dashboard (V2.0)")
 st.caption("Frontend client for the FastAPI backend")
 
+
 def api_get(path: str, params: Optional[dict] = None, timeout: int = 15):
     return requests.get(f"{BACKEND_URL}{path}", params=params, timeout=timeout)
 
@@ -46,7 +47,8 @@ def fetch_transactions(
     category: str = "All",
     only_anomalies: bool = False,
     start_date: Optional[str] = None,
-    end_date: Optional[str] = None):
+    end_date: Optional[str] = None,
+):
     params = {
         "limit": limit,
         "search": search or None,
@@ -63,6 +65,7 @@ def fetch_transactions(
         return [], response.text
     except requests.RequestException as e:
         return [], str(e)
+
 
 @st.cache_data(ttl=5)
 def fetch_summary(
@@ -183,13 +186,14 @@ if "date_range" not in st.session_state:
     st.session_state.date_range = None
 
 
-
 with st.sidebar:
     st.header("➕ Add Transaction")
 
     with st.form("add_transaction_form", clear_on_submit=True):
         txn_date = st.date_input("Date", value=date.today())
-        description = st.text_input("Description", placeholder="Netflix, Petrol, Groceries")
+        description = st.text_input(
+            "Description", placeholder="Netflix, Petrol, Groceries"
+        )
         amount = st.number_input("Amount", min_value=0.01, step=0.01, format="%.2f")
         submitted = st.form_submit_button("Save Transaction")
 
@@ -211,16 +215,36 @@ with st.sidebar:
     st.divider()
     st.header("🔎 Filter Transactions")
 
-    st.session_state.search_text = st.text_input("Search description", placeholder="Search by merchant or note", value=st.session_state.search_text)
-    st.session_state.only_anomalies = st.checkbox("Show only anomalies", value=st.session_state.only_anomalies)
+    st.session_state.search_text = st.text_input(
+        "Search description",
+        placeholder="Search by merchant or note",
+        value=st.session_state.search_text,
+    )
+    st.session_state.only_anomalies = st.checkbox(
+        "Show only anomalies", value=st.session_state.only_anomalies
+    )
 
     raw_transactions, _ = fetch_transactions(limit=500)
     temp_df = pd.DataFrame(raw_transactions) if raw_transactions else pd.DataFrame()
 
     if not temp_df.empty and "category" in temp_df.columns:
-        category_list = sorted([c for c in temp_df["category"].dropna().astype(str).unique().tolist() if c.strip()])
+        category_list = sorted(
+            [
+                c
+                for c in temp_df["category"].dropna().astype(str).unique().tolist()
+                if c.strip()
+            ]
+        )
         category_options = ["All"] + category_list
-        st.session_state.selected_category = st.selectbox("Category", category_options, index=category_options.index(st.session_state.selected_category) if st.session_state.selected_category in category_options else 0)
+        st.session_state.selected_category = st.selectbox(
+            "Category",
+            category_options,
+            index=(
+                category_options.index(st.session_state.selected_category)
+                if st.session_state.selected_category in category_options
+                else 0
+            ),
+        )
     else:
         st.session_state.selected_category = st.selectbox("Category", ["All"], index=0)
 
@@ -247,8 +271,12 @@ with st.sidebar:
 search_text = st.session_state.search_text.strip()
 selected_category = st.session_state.selected_category
 only_anomalies = st.session_state.only_anomalies
-start_date = st.session_state.date_range[0].isoformat() if st.session_state.date_range else None
-end_date = st.session_state.date_range[1].isoformat() if st.session_state.date_range else None
+start_date = (
+    st.session_state.date_range[0].isoformat() if st.session_state.date_range else None
+)
+end_date = (
+    st.session_state.date_range[1].isoformat() if st.session_state.date_range else None
+)
 
 summary, summary_error = fetch_summary(
     search=search_text,
@@ -287,7 +315,9 @@ else:
     col3.metric("Top Category", "—")
     st.warning(f"Could not load summary: {summary_error}")
 
-tab1, tab2, tab3, tab4 = st.tabs(["Transactions", "Category Breakdown", "Manage Transactions", "Teach AI"])
+tab1, tab2, tab3, tab4 = st.tabs(
+    ["Transactions", "Category Breakdown", "Manage Transactions", "Teach AI"]
+)
 
 with tab1:
     st.subheader("Recent Transactions")
@@ -386,7 +416,11 @@ with tab4:
             for _, row in pd.DataFrame(transactions).iterrows()
         }
 
-        selected_label = st.selectbox("Select a transaction to correct", list(options.keys()), key="teach_ai_select")
+        selected_label = st.selectbox(
+            "Select a transaction to correct",
+            list(options.keys()),
+            key="teach_ai_select",
+        )
         selected = options[selected_label]
 
         tx_id = int(selected["id"])
@@ -395,19 +429,27 @@ with tab4:
         st.info(f"Current AI guess: {current_predicted}")
 
         with st.form("teach_ai_form"):
-            corrected_category = st.text_input("Correct Category", value=current_predicted)
-            correction_notes = st.text_area("Notes (optional)", placeholder="Why is this correction needed?")
+            corrected_category = st.text_input(
+                "Correct Category", value=current_predicted
+            )
+            correction_notes = st.text_area(
+                "Notes (optional)", placeholder="Why is this correction needed?"
+            )
             save_correction = st.form_submit_button("Save Correction")
 
         if save_correction:
             if not corrected_category.strip():
                 st.error("Corrected category cannot be empty.")
             else:
-                result, error = submit_correction(tx_id, corrected_category, correction_notes)
+                result, error = submit_correction(
+                    tx_id, corrected_category, correction_notes
+                )
                 if error:
                     st.error(f"Could not save correction: {error}")
                 else:
-                    st.success("Correction saved. The model now has a better clue what it is doing.")
+                    st.success(
+                        "Correction saved. The model now has a better clue what it is doing."
+                    )
                     st.cache_data.clear()
                     st.rerun()
 
