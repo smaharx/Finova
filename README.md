@@ -1,8 +1,8 @@
-# AI Personal Finance Tracker  
+# Finova
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue) ![AI](https://img.shields.io/badge/AI-Prophet%20%7C%20Isolation%20Forest-orange) ![Database](https://img.shields.io/badge/Database-SQLite-lightgrey) ![Status](https://img.shields.io/badge/Project-Active-yellowgreen)
 
-A local, AI-driven web application designed to help users track expenses, automatically categorize transactions, detect anomalous spending behavior, and forecast future financial trends. The system provides a clean dashboard for real-time insights while leveraging advanced Machine Learning models in the background.  
+Finova is a personal finance tracker that helps you manage spending, correct AI predictions, detect anomalies, and review financial insights in one place.The system provides a clean dashboard for real-time insights while leveraging advanced Machine Learning models in the background.  
 
 ---  
 
@@ -54,7 +54,7 @@ The application is modularized to separate the UI from heavy data processing:
 ## Project Structure
 
 ```
-personal-finance-tracker/
+Finova/
 │
 ├── dashboard.py         # Main entry point for the Streamlit UI
 ├── requirements.txt     # Python dependencies
@@ -78,8 +78,8 @@ personal-finance-tracker/
 
 Clone the repository:  
 
-git clone https://github.com/smaharx/personal-finance-tracker.git  
-cd personal-finance-tracker  
+git clone https://github.com/smaharx/Finova.git  
+cd Finova 
 
 Set up a virtual environment and install dependencies:  
 
@@ -137,7 +137,7 @@ python scripts/seed_db.py
 
 ## Authors  
 
-Shahzaib Mahar (@smaharx)  
+Shahzaib Mahar [@smaharx]  
 
 ---  
 
