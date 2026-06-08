@@ -1,7 +1,7 @@
-# System Architecture
+# Finova Architecture
 
 ## 1. High-Level Overview
-The AI Personal Finance Tracker is currently designed as a monolithic data application (Version 1.0). It processes user financial data, stores it locally, and runs advanced Machine Learning pipelines to generate predictive forecasting and anomaly detection. 
+Finova is currently designed as a monolithic data application (Version 1.0). It processes user financial data, stores it locally, and runs advanced Machine Learning pipelines to generate predictive forecasting and anomaly detection. 
 
 The architecture is built prioritizing mathematical accuracy and UI responsiveness, separating the heavy Machine Learning dataframes from the front-end rendering logic.
 
@@ -15,7 +15,7 @@ The architecture is built prioritizing mathematical accuracy and UI responsivene
 
 ## 3. Directory Structure
 ```text
-personal-finance-tracker/
+Finova/
 │
 ├── dashboard.py         # Main entry point for the Streamlit UI
 ├── requirements.txt     # Dependency management
