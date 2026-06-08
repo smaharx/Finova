@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)
-![React](https://img.shields.io/badge/Frontend-React-blue)
+![Streamlit](https://img.shields.io/badge/Frontend-Streamlit-red)
 ![Database](https://img.shields.io/badge/Database-PostgreSQL-lightgrey)
 ![AI](https://img.shields.io/badge/AI-Prophet%20%7C%20Isolation%20Forest-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
