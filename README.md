@@ -142,7 +142,7 @@ python scripts/seed_db.py
 
 ## Authors  
 
-Shahzaib Mahar (@smaharx)
+Shahzaib Mahar (https://github.com/smaharx)
 
 ---  
 
