@@ -1,6 +1,12 @@
 # Finova
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-blue) ![AI](https://img.shields.io/badge/AI-Prophet%20%7C%20Isolation%20Forest-orange) ![Database](https://img.shields.io/badge/Database-SQLite-lightgrey) ![Status](https://img.shields.io/badge/Project-Active-yellowgreen)
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)
+![React](https://img.shields.io/badge/Frontend-React-blue)
+![Database](https://img.shields.io/badge/Database-PostgreSQL-lightgrey)
+![AI](https://img.shields.io/badge/AI-Prophet%20%7C%20Isolation%20Forest-orange)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Project-Active-yellowgreen)
 
 Finova is a personal finance tracker that helps you manage spending, correct AI predictions, detect anomalies, and review financial insights in one place.The system provides a clean dashboard for real-time insights while leveraging advanced Machine Learning models in the background.  
 
