@@ -7,10 +7,10 @@ import streamlit as st
 
 from config.settings import BACKEND_URL
 
-st.set_page_config(page_title="SaaS Finance Tracker V2", layout="wide")
+st.set_page_config(page_title="Finova", layout="wide")
 
-st.title("🛡️ Smart Finance Dashboard (V2.0)")
-st.caption("Frontend client for the FastAPI backend")
+st.title("Finova")
+st.caption("Personal finance tracker with AI insights")
 
 
 def api_get(path: str, params: Optional[dict] = None, timeout: int = 15):
