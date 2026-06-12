@@ -1,0 +1,26 @@
+=== Finova ML Evaluation Report ===
+
+Accuracy: 1.0000
+Precision (macro): 1.0000
+Recall (macro): 1.0000
+F1 Score (macro): 1.0000
+
+Classification Report:
+               precision    recall  f1-score   support
+
+Entertainment       1.00      1.00      1.00       111
+         Food       1.00      1.00      1.00       119
+       Health       1.00      1.00      1.00       115
+         Rent       1.00      1.00      1.00       107
+     Shopping       1.00      1.00      1.00       107
+Subscriptions       1.00      1.00      1.00       114
+    Transport       1.00      1.00      1.00       108
+       Travel       1.00      1.00      1.00       107
+    Utilities       1.00      1.00      1.00       112
+
+     accuracy                           1.00      1000
+    macro avg       1.00      1.00      1.00      1000
+ weighted avg       1.00      1.00      1.00      1000
+
+Confusion Matrix:
+[[111, 0, 0, 0, 0, 0, 0, 0, 0], [0, 119, 0, 0, 0, 0, 0, 0, 0], [0, 0, 115, 0, 0, 0, 0, 0, 0], [0, 0, 0, 107, 0, 0, 0, 0, 0], [0, 0, 0, 0, 107, 0, 0, 0, 0], [0, 0, 0, 0, 0, 114, 0, 0, 0], [0, 0, 0, 0, 0, 0, 108, 0, 0], [0, 0, 0, 0, 0, 0, 0, 107, 0], [0, 0, 0, 0, 0, 0, 0, 0, 112]]
