@@ -10,7 +10,7 @@ The architecture is built prioritizing mathematical accuracy and UI responsivene
 * **Data Processing:** Pandas, NumPy
 * **Machine Learning:** * `Prophet` (Time-series forecasting)
   * `scikit-learn` / Isolation Forest (Anomaly detection)
-* **Database:** SQLite (Local)
+* **Database:** PostgreSQL
 * **Visualization:** Plotly
 
 ## 3. Directory Structure
