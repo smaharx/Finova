@@ -1,6 +1,4 @@
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=900&pause=1000&color=44F95E&center=true&vCenter=true&width=650&lines=Finova;AI-powered+Personal+Finance+Tracker;Category+Prediction+%7C+Anomaly+Detection+%7C+Analytics)](https://git.io/typing-svg)
-
-**Track spending. Catch anomalies. Improve predictions.**
+# Finova
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)
@@ -63,21 +61,21 @@ The application is modularized to separate the UI from heavy data processing:
 ```
 Finova/
 │
-├── dashboard.py         # Main entry point for the Streamlit UI
-├── requirements.txt     # Python dependencies
-├── README.md            # Project documentation and setup
-├── ARCHITECTURE.md      # System design and data flow details
-│
-├── api/                 # (V2.0) Planned FastAPI routing
-├── core/                # Core business logic and NLP configurations
-├── ml/                  # Machine learning models (Anomaly & Forecast)
-├── analysis/            # Data processing and UI metric calculations
-│
-├── data/                # Local database storage (Git-ignored)
-│   └── expenses.db      # SQLite database file
-│
-└── scripts/             # Utility scripts
-    └── seed_db.py       # Generates 20,000 synthetic records for ML training
+├── frontend/             # Streamlit frontend
+├── api/                  # FastAPI backend
+├── ml/                   # ML training, evaluation, and prediction
+├── tests/                # Automated tests
+├── docs/                 # API contract, screenshots, diagrams
+├── config/               # Runtime settings
+├── scripts/              # Utility scripts
+├── data/                 # Training and validation datasets
+├── docker/               # Container build files
+├── docker-compose.yml    # Local multi-container setup
+├── .env.example          # Environment template
+├── requirements.txt      # Python dependencies
+├── README.md             # Project documentation
+├── ARCHITECTURE.md       # System design and data flow
+└── LICENSE               # MIT license
 ```    
 ---  
 
