@@ -1,4 +1,6 @@
-# Finova
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=900&pause=1000&color=44F95E&center=true&vCenter=true&width=650&lines=Finova;AI-powered+Personal+Finance+Tracker;Category+Prediction+%7C+Anomaly+Detection+%7C+Analytics)](https://git.io/typing-svg)
+
+**Track spending. Catch anomalies. Improve predictions.**
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)
