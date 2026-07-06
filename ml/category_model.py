@@ -1,43 +1,51 @@
-import joblib
 import os
+import joblib
+from typing import Optional
+
+BASE_DIR = os.path.dirname(__file__)
+MODEL_PATH = os.path.join(BASE_DIR, "saved_brain.pkl")
+
+_model = None
 
 
-import requests
+def _load_model() -> Optional[object]:
+    global _model
+    if _model is not None:
+        return _model
 
-def predict_category(description):
-    url = "http://127.0.0.1:8000/predict"
+    if not os.path.exists(MODEL_PATH):
+        return None
+
     try:
-        # Send the description to the API server
-        response = requests.post(url, json={"description": description}, timeout=2)
-        if response.status_code == 200:
-            return response.json()["category"]
-        return "Uncategorized (API Error)"
-    except requests.exceptions.ConnectionError:
-        return "Uncategorized (Server Offline)"
+        _model = joblib.load(MODEL_PATH)
+        return _model
+    except Exception:
+        # Don't crash import if model file is corrupted; return None and let callers handle it.
+        _model = None
+        return None
 
-# No more joblib.load() here! The main app is now "lightweight."
 
-def predict_category(description):
-    model_path = 'ml/saved_brain.pkl'
-    
-    # Safety check: Make sure the brain exists!
-    if not os.path.exists(model_path):
+def predict_category(description: str) -> str:
+    """
+    Predict the category for a single transaction description.
+    Returns a string category or a human-readable "Uncategorized (...)" message
+    when the model is not available.
+    """
+    model = _load_model()
+    if model is None:
         return "Uncategorized (No AI model found)"
-    
-    # Load the brain
-    model = joblib.load(model_path)
-    
-    # Make the prediction
-    prediction = model.predict([description])[0]
-    
-    return prediction
 
-# Quick test to make sure it works!
+    try:
+        return model.predict([description])[0]
+    except Exception:
+        return "Uncategorized (Model Error)"
+
+
 if __name__ == "__main__":
-    test_1 = "UBER RIDES SF"
-    test_2 = "AMZN MKTP US #9923"
-    test_3 = "CITY APARTMENTS LEASING"
-    
-    print(f"'{test_1}' -> {predict_category(test_1)}")
-    print(f"'{test_2}' -> {predict_category(test_2)}")
-    print(f"'{test_3}' -> {predict_category(test_3)}")
+    samples = [
+        "UBER RIDES SF",
+        "AMZN MKTP US #9923",
+        "CITY APARTMENTS LEASING"
+    ]
+    for s in samples:
+        print(f"'{s}' -> {predict_category(s)}")
