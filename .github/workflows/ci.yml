@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: finova
+          POSTGRES_PASSWORD: finova_pass
+          POSTGRES_DB: finova
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U finova -d finova"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install system deps (for psycopg2)
+        run: sudo apt-get update && sudo apt-get install -y libpq-dev build-essential
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Wait for Postgres
+        env:
+          DATABASE_URL: postgresql://finova:finova_pass@localhost:5432/finova
+        run: |
+          python - <<PY
+import sys, time, os
+import psycopg2
+url = os.environ.get("DATABASE_URL")
+for _ in range(30):
+    try:
+        psycopg2.connect(url)
+        print("postgres ready")
+        sys.exit(0)
+    except Exception as e:
+        print("waiting for postgres...", e)
+        time.sleep(1)
+print("postgres not ready")
+sys.exit(1)
+PY
+
+      - name: Run Alembic migrations
+        env:
+          DATABASE_URL: postgresql://finova:finova_pass@localhost:5432/finova
+        run: alembic upgrade head
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://finova:finova_pass@localhost:5432/finova
+        run: python -m pytest -q
