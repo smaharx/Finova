@@ -1,26 +1,36 @@
+version: "3.8"
+
 services:
-  backend:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: finova
+      POSTGRES_PASSWORD: finova_pass
+      POSTGRES_DB: finova
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finova"]
+      interval: 5s
+      retries: 10
+
+  web:
     build:
       context: .
-      dockerfile: docker/backend.Dockerfile
-    container_name: finance_tracker_backend
-    env_file:
-      - .env
+      dockerfile: Dockerfile
+    command: ["/app/entrypoint.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://finova:finova_pass@db:5432/finova
+      - PYTHONUNBUFFERED=1
     ports:
       - "8000:8000"
+    volumes:
+      - ./:/app
     restart: unless-stopped
 
-  frontend:
-    build:
-      context: .
-      dockerfile: docker/frontend.Dockerfile
-    container_name: finance_tracker_frontend
-    env_file:
-      - .env
-    environment:
-      BACKEND_URL: http://backend:8000
-    ports:
-      - "8501:8501"
-    depends_on:
-      - backend
-    restart: unless-stopped
+volumes:
+  postgres_data:
