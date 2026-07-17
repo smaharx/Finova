@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from api.routers import transactions, corrections, analytics
+from api.routers import ml as ml_router
 from api.ml import load_model
 
 app = FastAPI(title="Finance Tracker API", version="2.0")
@@ -10,6 +11,7 @@ load_model()
 app.include_router(transactions.router)
 app.include_router(corrections.router)
 app.include_router(analytics.router)
+app.include_router(ml_router.router)
 
 @app.get("/")
 def health_check():

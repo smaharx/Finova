@@ -9,7 +9,9 @@ import sys
 import os
 import psycopg2
 try:
-    psycopg2.connect(os.environ.get('DATABASE_URL'))
+    conn_str = os.environ.get('DATABASE_URL')
+    # psycopg2 accepts both DSN and URL form
+    psycopg2.connect(conn_str)
     print('DB ok')
     sys.exit(0)
 except Exception:
@@ -20,6 +22,26 @@ PY
   fi
   sleep 1
 done
+
+# Download model if MODEL_URL is provided and model file is missing
+if [ ! -f "ml/saved_brain.pkl" ] && [ -n "$MODEL_URL" ]; then
+  echo "MODEL_URL provided and ml/saved_brain.pkl missing — downloading model..."
+  python - <<PY
+import os, sys, urllib.request
+url = os.environ.get('MODEL_URL')
+if not url:
+    print('MODEL_URL not set')
+    sys.exit(0)
+os.makedirs('ml', exist_ok=True)
+out_path = os.path.join('ml', 'saved_brain.pkl')
+try:
+    urllib.request.urlretrieve(url, out_path)
+    print('Model downloaded to', out_path)
+except Exception as e:
+    print('Model download failed:', e)
+    sys.exit(1)
+PY
+fi
 
 # Run migrations
 echo "Running Alembic migrations..."
