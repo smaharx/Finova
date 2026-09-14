@@ -1,23 +1,15 @@
+import sys
+import os
 from datetime import date, datetime
 from pathlib import Path
 from typing import Optional
 
+# Add project root to Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import pandas as pd
 import requests
 import streamlit as st
-
-
-# ---------------------------------------------------------------------------
-# Project configuration
-# ---------------------------------------------------------------------------
-
-# Resolve the project root regardless of where Streamlit is launched from.
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-
-# Make the project root importable so `config.settings` works when this file
-# is launched directly with Streamlit.
-if str(PROJECT_ROOT) not in __import__("sys").path:
-    __import__("sys").path.insert(0, str(PROJECT_ROOT))
 
 from config.settings import BACKEND_URL
 
