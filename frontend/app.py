@@ -1,10 +1,16 @@
+import sys
+import os
 from datetime import date, datetime
 from typing import Optional
+
+# Add project root to Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import pandas as pd
 import requests
 import streamlit as st
 
+# Now import from config (accessible from project root)
 from config.settings import BACKEND_URL
 
 st.set_page_config(page_title="Finova", layout="wide")
