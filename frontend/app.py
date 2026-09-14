@@ -330,6 +330,9 @@ if "only_anomalies" not in st.session_state:
 if "date_range" not in st.session_state:
     st.session_state.date_range = None
 
+if "enable_date_filter" not in st.session_state:
+    st.session_state.enable_date_filter = False
+
 
 # ---------------------------------------------------------------------------
 # Sidebar
@@ -450,14 +453,21 @@ with st.sidebar:
             index=0,
         )
 
-    # -----------------------------------------------------------------------
-    # Date filter
-    # -----------------------------------------------------------------------
+# -----------------------------------------------------------------------
+# Date filter
+# -----------------------------------------------------------------------
 
+st.session_state.enable_date_filter = st.checkbox(
+    "Filter by date range",
+    value=st.session_state.enable_date_filter,
+)
+
+if st.session_state.enable_date_filter:
     if not temp_df.empty and "date" in temp_df.columns:
         temp_dates = (
             pd.to_datetime(
                 temp_df["date"],
+                format="mixed",
                 errors="coerce",
             )
             .dropna()
@@ -468,9 +478,17 @@ with st.sidebar:
             min_date = temp_dates.min()
             max_date = temp_dates.max()
 
+            current_range = st.session_state.date_range
+
+            if current_range is None or len(current_range) != 2:
+                current_range = (
+                    min_date,
+                    max_date,
+                )
+
             date_range = st.date_input(
                 "Date range",
-                value=(st.session_state.date_range or (min_date, max_date)),
+                value=current_range,
                 min_value=min_date,
                 max_value=max_date,
             )
@@ -484,10 +502,8 @@ with st.sidebar:
                     date_range,
                 )
 
-    if st.button("Apply Filters"):
-        st.cache_data.clear()
-        st.rerun()
-
+else:
+    st.session_state.date_range = None
 
 # ---------------------------------------------------------------------------
 # Active filters
@@ -499,14 +515,12 @@ selected_category = st.session_state.selected_category
 
 only_anomalies = st.session_state.only_anomalies
 
-start_date = (
-    st.session_state.date_range[0].isoformat() if st.session_state.date_range else None
-)
-
-end_date = (
-    st.session_state.date_range[1].isoformat() if st.session_state.date_range else None
-)
-
+if st.session_state.enable_date_filter and st.session_state.date_range:
+    start_date = st.session_state.date_range[0].isoformat()
+    end_date = st.session_state.date_range[1].isoformat()
+else:
+    start_date = None
+    end_date = None
 
 # ---------------------------------------------------------------------------
 # Dashboard data
